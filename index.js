@@ -18,10 +18,10 @@ con.connect(function(err) {
 app.get('/list', async function (request, response) {
     con.query("SELECT * FROM books", function (err, result, fields) {
         if (err) throw err;
-        console.log(result);
+        response.json({ret:result[0].title});;
     });
 
-    response.json({ret:0});
+
 });
 
 app.listen(8080, () => console.log(('listening :)')))
