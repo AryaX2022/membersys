@@ -64,6 +64,7 @@ var jwt = require("jsonwebtoken");
 const secret = "membersys-secret"
 
 app.get("/", async function(request, response) {
+    console.log("I am here.");
     response.json("Live");
 });
 
