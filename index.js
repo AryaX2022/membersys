@@ -1,5 +1,17 @@
 const express = require('express');
 const app = express();
+
+//const {generateUsername} = require("unique-username-generator");
+
+
+// use cors before bodyParser
+const cors = require('cors');
+app.use(cors({
+    //TODO 'http://localhost', 'http://localhost:3000',
+    origin: ['http://localhost', 'http://localhost:3000', 'https://reading.yesky.online', 'https://yesky.online', 'https://read-cac08.web.app']
+}));
+
+
 var bodyParser = require('body-parser')
 // create application/x-www-form-urlencoded parser
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
@@ -20,26 +32,35 @@ var transporter = nodemailer.createTransport({
 });
 
 //这个值设置的大一些，不期望通过收会员费用来赚钱，主要是想通过流量变现：靠广告来赚钱。
-const MAX_DOWNLOAD = 16;
+const MAX_DOWNLOAD = 10;
 
 var request = require('request')
 
 
 const pagesize = 15;
 
-const cors = require('cors');
-const {generateUsername} = require("unique-username-generator");
-app.use(cors());
-
-//无忧资源网数据库链接
+// var conn51ziyuan = mysql.createPool({
+//     host: "localhost",
+//     user: "root",
+//     password: "123456",
+//     database: "if0_34676683_share",
+//     multipleStatements: true
+// });
+//无忧资源网数据库链接： DOM MySQL 属于账号m15601925668@163.com 68.183.191.223
+// var conn51ziyuan = mysql.createPool({
+//     host: "localhost",
+//     user: "pointed-brief-tif",
+//     password: process.env.ZIYUAN_DB_PWD,
+//     database: "pointed_brief_tif_db",
+//     multipleStatements: true
+// });
 var conn51ziyuan = mysql.createPool({
-    host: "13.212.78.127",
-    user: "web",
+    host: "68.183.191.223",
+    user: "pointed-brief-tif",
     password: process.env.ZIYUAN_DB_PWD,
-    database: "ziyuan",
+    database: "pointed_brief_tif_db",
     multipleStatements: true
 });
-
 
 
 // var con = mysql.createPool({
@@ -49,16 +70,21 @@ var conn51ziyuan = mysql.createPool({
 //     database: "ibooks",
 //     multipleStatements: true
 // });
+//数据库部署在： DOMCloud mysql 属于账号6983299x@gmail.com readservice.yesky.online 68.183.191.223
+// var con = mysql.createPool({
+//     host: "localhost",
+//     user: "readservice",
+//     password: process.env.DB_PWD,
+//     database: "readservice_db",
+//     multipleStatements: true
+// });
 var con = mysql.createPool({
-    host: "2296.dnstoo.com",
-    user: "ibooks_f",
+    host: "68.183.191.223",
+    user: "readservice",
     password: process.env.DB_PWD,
-    database: "ibooks",
+    database: "readservice_db",
     multipleStatements: true
 });
-// con.connect(function(err) {
-//     if (err) throw err;
-// });
 
 var jwt = require("jsonwebtoken");
 const secret = "membersys-secret"
@@ -89,7 +115,7 @@ app.get('/bookshot', async function (request, response) {
 //根据tag获取最热书籍排行
 app.post('/bookshots', async function (request, response) {
     con.query("select b.*, d.vw_init+d.vw vw, d.dl_init+d.dl dl, d.score from docdata d " +
-        "inner join (select id,catagory,site,token,title,cover_img,pdf_size,epub_size,mobi_size from books where order_hot is not null) b" +
+        "inner join (select id,catagory,site,token,title,cover_img,pdf_size,epub_size,mobi_size,avatar from books where order_hot is not null) b" +
         " on d.zyid = b.id", function (err, result, fields) {
         if (err) throw err;
         response.json(result);
@@ -195,8 +221,9 @@ app.post("/userregister", jsonParser, function(req, res) {
         if (err) throw err;
         console.log(result);
         if(result[0].ct === 0) {
+            const userip = getClientIp(req);
             const rtime = new Date();
-            con.query("insert into users(username,password,rtime, avatar) values(?,?,?,?);", [username, req.body.password, rtime, req.body.avatar], function (err, result, fields) {
+            con.query("insert into users(username,password,rtime, avatar, ip) values(?,?,?,?,?);", [username, req.body.password, rtime, req.body.avatar, userip], function (err, result, fields) {
                 if (err) throw err;
                 //console.log(result);
             });
@@ -376,7 +403,7 @@ app.post('/createpayment', jsonParser, async function(request, response) {
     const ciphertext = CryptoJS.AES.encrypt(message, password);
     console.log(ciphertext);
     const result = await alipaySdk.exec('alipay.trade.precreate', {
-        notify_url: 'http://13.212.78.127:88/paymentcallback', // 通知回调地址
+        //notify_url: 'http://13.212.78.127:88/paymentcallback', // 通知回调地址
         bizContent: {
             out_trade_no: request.body.out_trade_no,
             total_amount: request.body.total_amount,
